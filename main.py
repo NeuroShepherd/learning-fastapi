@@ -26,12 +26,20 @@ async def create_item(item: Item):
 
 
 @app.get("/items", description="Get all items")
-async def get_items(limit: int = 10):
+async def get_items(limit: int = 10, reverse: bool = False):
     items = []
     with open("items.txt", "r") as f:
-        for line in f:
-            id, name = line.strip().split(": ")
-            items.append(Item(id=int(id), name=name))
-            if len(items) >= limit:
-                break
+        if reverse:
+            lines = f.readlines()
+            for line in reversed(lines):
+                id, name = line.strip().split(": ")
+                items.append(Item(id=int(id), name=name))
+                if len(items) >= limit:
+                    break
+        else:
+            for line in f:
+                id, name = line.strip().split(": ")
+                items.append(Item(id=int(id), name=name))
+                if len(items) >= limit:
+                    break
     return items
