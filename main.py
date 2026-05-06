@@ -1,12 +1,14 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from pydantic import BaseModel
 from enum import Enum
+from typing import Annotated
 
 app = FastAPI()
 
 class Item(BaseModel):
     id: int
-    name: str | None = None
+    # use annotated and query to add documentation and validation to the name field. This will show up in the API docs and also enforce the validation rules when the endpoint is called.
+    name: Annotated[str, Query(min_length=3, max_length=50)]
 
 
 class FavoriteSport(str, Enum):
@@ -67,7 +69,7 @@ async def get_item_by_id(item_id: int) -> list[Item] | dict[str, str]:
 
 
 @app.post("/favorite-sport", description="Set your favorite sport")
-async def set_favorite_sport(sport: FavoriteSport):
+async def set_favorite_sport(sport: FavoriteSport) -> dict[str, str]:
     with open("favorite_sport.txt", "w") as f:
         f.write(sport.value)
     return {"message": f"Your favorite sport is {sport.value}"}
@@ -79,7 +81,7 @@ async def set_favorite_sport(sport: FavoriteSport):
          description="This overrides the doc string from the function", 
          summary="Text goes next to the endpoint name"
          )
-async def update_item(item_id: int, item: Item):
+async def update_item(item_id: int, item: Item) -> dict[str, str]:
     """
     Do these doc strings show up in the API docs? Yes they do! As text content under the endpoint description. 
     You can use this to provide more detailed information about the endpoint, its parameters, and its behavior.
