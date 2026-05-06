@@ -11,6 +11,9 @@ class Item(BaseModel):
     # This will show up in the API docs and also enforce the validation rules when the endpoint is called.
     # Note that the default value is None. If any default value is used, the field becomes optional
     name: Annotated[str | None, Query(min_length=3, max_length=50, pattern="name_")] = None
+    # this field is required because it has no default value, and it must be a string between 1 and 100 characters long.
+    # None is allowed as a value, but requires user to explicitly set it to None if they don't want to provide a value. 
+    # This is different from the name field, which is optional and defaults to None if not provided.
     favorite_animal: Annotated[str | None, Query(min_length=1, max_length=100)]
 
 
@@ -46,13 +49,13 @@ async def get_items(limit: int = 10, reverse: bool | None = None) -> list[Item]:
             lines = f.readlines()
             for line in reversed(lines):
                 id, name, favorite_animal = line.strip().split(": ")
-                items.append(Item(id=int(id), name=name))
+                items.append(Item(id=int(id), name=name, favorite_animal=favorite_animal))
                 if len(items) >= limit:
                     break
         else:
             for line in f:
-                id, name = line.strip().split(": ")
-                items.append(Item(id=int(id), name=name))
+                id, name, favorite_animal = line.strip().split(": ")
+                items.append(Item(id=int(id), name=name, favorite_animal=favorite_animal))
                 if len(items) >= limit:
                     break
     return items
@@ -63,9 +66,9 @@ async def get_item_by_id(item_id: Annotated[int, Path(ge=0)]) -> list[Item] | di
     matches = []
     with open("items.txt", "r") as f:
         for line in f:
-            id, name = line.strip().split(": ")
+            id, name, favorite_animal = line.strip().split(": ")
             if int(id) == item_id:
-                matches.append(Item(id=int(id), name=name))
+                matches.append(Item(id=int(id), name=name, favorite_animal=favorite_animal))
     if matches:
         return matches
     return {"message": f"Item with id {item_id} not found"}
