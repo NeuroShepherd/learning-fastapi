@@ -6,8 +6,10 @@ from typing import Annotated
 app = FastAPI()
 
 class Item(BaseModel):
-    id: int
-    # use annotated and query to add documentation and validation to the name field. This will show up in the API docs and also enforce the validation rules when the endpoint is called.
+    id: Annotated[int, Query(ge=0, le=1e6)]
+    # use annotated and query to add documentation and validation to the name field. 
+    # This will show up in the API docs and also enforce the validation rules when the endpoint is called.
+    # Note that the default value is None. If any default value is used, the field becomes optional
     name: Annotated[str | None, Query(min_length=3, max_length=50, pattern="name_")] = None
 
 
@@ -28,7 +30,7 @@ async def custom_func_name(item_id: str):
 
 
 @app.post("/items", description="Create an item")
-async def create_item(item: Item):
+async def create_item(item: Item) -> dict[str, str]:
     # write to a file in this project folder and create file if it doesn't exist
     with open("items.txt", "a") as f:
         f.write(f"{item.id}: {item.name}\n")
