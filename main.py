@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Path
 from pydantic import BaseModel
 from enum import Enum
 from typing import Annotated
@@ -56,7 +56,7 @@ async def get_items(limit: int = 10, reverse: bool | None = None) -> list[Item]:
 
 
 @app.get("/items/{item_id}", description="Get an item by id")
-async def get_item_by_id(item_id: int) -> list[Item] | dict[str, str]:
+async def get_item_by_id(item_id: Annotated[int, Path(ge=0)]) -> list[Item] | dict[str, str]:
     matches = []
     with open("items.txt", "r") as f:
         for line in f:
