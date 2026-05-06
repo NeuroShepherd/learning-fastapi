@@ -5,7 +5,7 @@ app = FastAPI()
 
 class Item(BaseModel):
     id: int
-    name: str
+    name: str | None = None
 
 @app.get("/")
 async def root():
@@ -23,3 +23,15 @@ async def create_item(item: Item):
     with open("items.txt", "a") as f:
         f.write(f"{item.id}: {item.name}\n")
     return {"message": f"Item created with id {item.id} and name {item.name}"}
+
+
+@app.get("/items", description="Get all items")
+async def get_items(limit: int = 10):
+    items = []
+    with open("items.txt", "r") as f:
+        for line in f:
+            id, name = line.strip().split(": ")
+            items.append(Item(id=int(id), name=name))
+            if len(items) >= limit:
+                break
+    return items
