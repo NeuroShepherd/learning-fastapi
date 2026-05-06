@@ -1,11 +1,19 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+from enum import Enum
 
 app = FastAPI()
 
 class Item(BaseModel):
     id: int
     name: str | None = None
+
+
+class FavoriteSport(str, Enum):
+    soccer = "soccer"
+    basketball = "basketball"
+    baseball = "baseball"
+    track = "track"
 
 @app.get("/")
 async def root():
@@ -56,3 +64,10 @@ async def get_item_by_id(item_id: int) -> list[Item] | dict[str, str]:
     if matches:
         return matches
     return {"message": f"Item with id {item_id} not found"}
+
+
+@app.post("/favorite-sport", description="Set your favorite sport")
+async def set_favorite_sport(sport: FavoriteSport):
+    with open("favorite_sport.txt", "w") as f:
+        f.write(sport.value)
+    return {"message": f"Your favorite sport is {sport.value}"}
