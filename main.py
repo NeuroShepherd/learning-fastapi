@@ -2,6 +2,7 @@ from fastapi import FastAPI, Query, Path
 from pydantic import BaseModel
 from enum import Enum
 from typing import Annotated
+from ast import literal_eval
 
 app = FastAPI()
 
@@ -15,6 +16,7 @@ class Item(BaseModel):
     # None is allowed as a value, but requires user to explicitly set it to None if they don't want to provide a value. 
     # This is different from the name field, which is optional and defaults to None if not provided.
     favorite_animal: Annotated[str | None, Query(min_length=1, max_length=100)]
+    cool_colors: Annotated[list[str] | None, Query()] = None
 
 
 class FavoriteSport(str, Enum):
@@ -37,8 +39,8 @@ async def custom_func_name(item_id: str):
 async def create_item(item: Item) -> dict[str, str]:
     # write to a file in this project folder and create file if it doesn't exist
     with open("items.txt", "a") as f:
-        f.write(f"{item.id}: {item.name}, {item.favorite_animal}\n")
-    return {"message": f"Item created with id {item.id} and name {item.name} with favorite animal {item.favorite_animal}"}
+        f.write(f"{item.id}: {item.name}: {item.favorite_animal}: {item.cool_colors}\n")
+    return {"message": f"Item created with id {item.id} and name {item.name} with favorite animal {item.favorite_animal} and cool colors {item.cool_colors}"}
 
 
 @app.get("/items", description="Get all items")
@@ -48,14 +50,23 @@ async def get_items(limit: int = 10, reverse: bool | None = None) -> list[Item]:
         if reverse:
             lines = f.readlines()
             for line in reversed(lines):
-                id, name, favorite_animal = line.strip().split(": ")
-                items.append(Item(id=int(id), name=name, favorite_animal=favorite_animal))
+                parts = line.strip().split(": ", maxsplit=3)
+                if len(parts) != 4:
+                    continue
+                id, name, favorite_animal, cool_colors = parts
+                cool_colors = literal_eval(cool_colors)
+                items.append(Item(id=int(id), name=name, favorite_animal=favorite_animal, cool_colors=list(cool_colors)))
                 if len(items) >= limit:
                     break
         else:
             for line in f:
-                id, name, favorite_animal = line.strip().split(": ")
-                items.append(Item(id=int(id), name=name, favorite_animal=favorite_animal))
+                print(line)
+                parts = line.strip().split(": ", maxsplit=3)
+                if len(parts) != 4:
+                    continue
+                id, name, favorite_animal, cool_colors = parts
+                cool_colors = literal_eval(cool_colors)
+                items.append(Item(id=int(id), name=name, favorite_animal=favorite_animal, cool_colors=list(cool_colors)))
                 if len(items) >= limit:
                     break
     return items
@@ -66,9 +77,13 @@ async def get_item_by_id(item_id: Annotated[int, Path(ge=0)]) -> list[Item] | di
     matches = []
     with open("items.txt", "r") as f:
         for line in f:
-            id, name, favorite_animal = line.strip().split(": ")
+            parts = line.strip().split(": ", maxsplit=3)
+            if len(parts) != 4:
+                continue
+            id, name, favorite_animal, cool_colors = parts
+            cool_colors = literal_eval(cool_colors)
             if int(id) == item_id:
-                matches.append(Item(id=int(id), name=name, favorite_animal=favorite_animal))
+                matches.append(Item(id=int(id), name=name, favorite_animal=favorite_animal, cool_colors=list(cool_colors)))
     if matches:
         return matches
     return {"message": f"Item with id {item_id} not found"}
