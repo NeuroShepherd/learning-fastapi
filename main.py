@@ -71,3 +71,18 @@ async def set_favorite_sport(sport: FavoriteSport):
     with open("favorite_sport.txt", "w") as f:
         f.write(sport.value)
     return {"message": f"Your favorite sport is {sport.value}"}
+
+
+# use ** to unpack the item model into a dictionary and combine it with the item_id in the response
+# example makes use of path and body parameters in the same endpoint. could also use query parameters if desired
+@app.put("/items/{item_id}", 
+         description="This overrides the doc string from the function", 
+         summary="Text goes next to the endpoint name"
+         )
+async def update_item(item_id: int, item: Item):
+    """
+    Do these doc strings show up in the API docs? Yes they do! As text content under the endpoint description. 
+    You can use this to provide more detailed information about the endpoint, its parameters, and its behavior.
+    Only appears if you don't provide a description in the decorator, otherwise the description in the decorator takes precedence.
+    """
+    return {"item_id": item_id, **item.model_dump()}
