@@ -26,7 +26,7 @@ async def create_item(item: Item):
 
 
 @app.get("/items", description="Get all items")
-async def get_items(limit: int = 10, reverse: bool = False):
+async def get_items(limit: int = 10, reverse: bool | None = None) -> list[Item]:
     items = []
     with open("items.txt", "r") as f:
         if reverse:
@@ -43,3 +43,16 @@ async def get_items(limit: int = 10, reverse: bool = False):
                 if len(items) >= limit:
                     break
     return items
+
+
+@app.get("/items/{item_id}", description="Get an item by id")
+async def get_item_by_id(item_id: int) -> list[Item] | dict[str, str]:
+    matches = []
+    with open("items.txt", "r") as f:
+        for line in f:
+            id, name = line.strip().split(": ")
+            if int(id) == item_id:
+                matches.append(Item(id=int(id), name=name))
+    if matches:
+        return matches
+    return {"message": f"Item with id {item_id} not found"}
