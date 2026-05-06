@@ -8,7 +8,7 @@ app = FastAPI()
 class Item(BaseModel):
     id: int
     # use annotated and query to add documentation and validation to the name field. This will show up in the API docs and also enforce the validation rules when the endpoint is called.
-    name: Annotated[str, Query(min_length=3, max_length=50)]
+    name: Annotated[str, Query(min_length=3, max_length=50)] | None = None
 
 
 class FavoriteSport(str, Enum):
