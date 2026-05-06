@@ -11,6 +11,7 @@ class Item(BaseModel):
     # This will show up in the API docs and also enforce the validation rules when the endpoint is called.
     # Note that the default value is None. If any default value is used, the field becomes optional
     name: Annotated[str | None, Query(min_length=3, max_length=50, pattern="name_")] = None
+    favorite_animal: Annotated[str | None, Query(min_length=1, max_length=100)]
 
 
 class FavoriteSport(str, Enum):
@@ -33,8 +34,8 @@ async def custom_func_name(item_id: str):
 async def create_item(item: Item) -> dict[str, str]:
     # write to a file in this project folder and create file if it doesn't exist
     with open("items.txt", "a") as f:
-        f.write(f"{item.id}: {item.name}\n")
-    return {"message": f"Item created with id {item.id} and name {item.name}"}
+        f.write(f"{item.id}: {item.name}, {item.favorite_animal}\n")
+    return {"message": f"Item created with id {item.id} and name {item.name} with favorite animal {item.favorite_animal}"}
 
 
 @app.get("/items", description="Get all items")
@@ -44,7 +45,7 @@ async def get_items(limit: int = 10, reverse: bool | None = None) -> list[Item]:
         if reverse:
             lines = f.readlines()
             for line in reversed(lines):
-                id, name = line.strip().split(": ")
+                id, name, favorite_animal = line.strip().split(": ")
                 items.append(Item(id=int(id), name=name))
                 if len(items) >= limit:
                     break
