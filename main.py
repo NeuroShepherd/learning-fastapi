@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Query, Path
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from enum import Enum
 from typing import Annotated
 from ast import literal_eval
@@ -7,16 +7,19 @@ from ast import literal_eval
 app = FastAPI()
 
 class Item(BaseModel):
-    id: Annotated[int, Query(ge=0, le=1e6)]
+    id: Annotated[int, Field(title="ID validation title", description="The ID of the item", ge=0, le=1e6)]
     # use annotated and query to add documentation and validation to the name field. 
     # This will show up in the API docs and also enforce the validation rules when the endpoint is called.
     # Note that the default value is None. If any default value is used, the field becomes optional
-    name: Annotated[str | None, Query(min_length=3, max_length=50, pattern="name_")] = None
+    name: Annotated[str | None, Field(min_length=3, max_length=50, pattern="name_")] = None
     # this field is required because it has no default value, and it must be a string between 1 and 100 characters long.
     # None is allowed as a value, but requires user to explicitly set it to None if they don't want to provide a value. 
     # This is different from the name field, which is optional and defaults to None if not provided.
-    favorite_animal: Annotated[str | None, Query(min_length=1, max_length=100)]
-    cool_colors: Annotated[list[str] | None, Query()] = None
+    favorite_animal: Annotated[str | None, Field(min_length=1, max_length=100)]
+    # this was an attempt to have a query parameter that is a list of strings e.g.
+    # https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#query-parameter-list-multiple-values
+    # but it does not work because these models are part of the body of the request, not query parameters
+    cool_colors: Annotated[list[str] | None, Field()] = None
 
 
 class FavoriteSport(str, Enum):
