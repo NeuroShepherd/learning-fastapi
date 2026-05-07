@@ -137,7 +137,7 @@ class ItemUpdate(BaseModel):
     cool_colors: list[str] | None = None
 
 
-@app.put("/items/{item_id}/", description="Update an item with a path parameter and a body parameter")
+@app.patch("/items/{item_id}/", description="Update an item with a path parameter and a body parameter")
 async def update_item(item_id: int, item: ItemUpdate):
     with open("items.txt", "r") as f:
         lines = f.readlines()
