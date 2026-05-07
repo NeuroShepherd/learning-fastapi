@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query, Path
+from fastapi import FastAPI, Query, Path, Body
 from pydantic import BaseModel, Field
 from enum import Enum
 from typing import Annotated, Literal
@@ -138,7 +138,7 @@ class ItemUpdate(BaseModel):
 
 
 @app.patch("/items/{item_id}/", description="Update an item with a path parameter and a body parameter")
-async def update_item(item_id: int, item: ItemUpdate):
+async def update_item(item_id: int, item: Annotated[ItemUpdate, Body(embed=True)]) -> dict[str, str]:
     with open("items.txt", "r") as f:
         lines = f.readlines()
 
