@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Query, Path, Body
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 from enum import Enum
 from typing import Annotated, Literal
 from ast import literal_eval
@@ -182,3 +182,15 @@ async def update_item(item_id: int, item: Annotated[ItemUpdate, Body(embed=True)
     return {"message": "Item updated", "item": updated_item.model_dump()}
         
     
+    
+
+
+class NestedModelsTesting(BaseModel):
+    id: Annotated[int, Field(title="ID validation title", description="The ID of the item", ge=0, le=1e6)]
+    links: Annotated[list[HttpUrl], Field(description="A list of URLs related to the item")]
+    
+@app.post("/nested-models/", description="Test nested models with a list of URLs")
+async def test_nested_models(item: NestedModelsTesting) -> dict[str, str]:
+    with open("nested_models.txt", "a") as f:
+        f.write(f"{item.id}: {item.links}\n")
+    return {"message": f"Nested model received with id {item.id} and links {item.links}"}
