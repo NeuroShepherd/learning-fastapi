@@ -128,3 +128,55 @@ class FilterParams(BaseModel):
 @app.get("/filter-params/")
 async def read_items(filter_query: Annotated[FilterParams, Query()]):
     return filter_query
+
+
+
+class ItemUpdate(BaseModel):
+    name: Annotated[str | None, Field(min_length=3, max_length=50, pattern="name_")] = None
+    favorite_animal: Annotated[str | None, Field(min_length=1, max_length=100)] = None
+    cool_colors: list[str] | None = None
+
+
+@app.put("/items/{item_id}/", description="Update an item with a path parameter and a body parameter")
+async def update_item(item_id: int, item: ItemUpdate):
+    with open("items.txt", "r") as f:
+        lines = f.readlines()
+
+    updated_lines = []
+    found = False
+
+    for line in lines:
+        parts = line.strip().split(": ", maxsplit=3)
+        if len(parts) != 4:
+            updated_lines.append(line)
+            continue
+
+        stored_id, name, favorite_animal, cool_colors = parts
+
+        if int(stored_id) == item_id:
+            found = True
+            existing_item = Item(
+                id=int(stored_id),
+                name=name,
+                favorite_animal=favorite_animal,
+                cool_colors=list(literal_eval(cool_colors)),
+            )
+
+            update_data = item.model_dump(exclude_unset=True)
+            updated_item = existing_item.model_copy(update=update_data)
+
+            updated_lines.append(
+                f"{updated_item.id}: {updated_item.name}: {updated_item.favorite_animal}: {updated_item.cool_colors}\n"
+            )
+        else:
+            updated_lines.append(line)
+
+    if not found:
+        return {"message": f"Item with id {item_id} not found"}
+
+    with open("items.txt", "w") as f:
+        f.writelines(updated_lines)
+
+    return {"message": "Item updated", "item": updated_item.model_dump()}
+        
+    
