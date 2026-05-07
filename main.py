@@ -187,7 +187,7 @@ async def update_item(item_id: int, item: Annotated[ItemUpdate, Body(embed=True)
 
 class NestedModelsTesting(BaseModel):
     id: Annotated[int, Field(title="ID validation title", description="The ID of the item", ge=0, le=1e6)]
-    links: Annotated[list[HttpUrl], Field(description="A list of URLs related to the item")]
+    links: Annotated[set[HttpUrl], Field(description="A list of URLs related to the item")]
     
 @app.post("/nested-models/", description="Test nested models with a list of URLs")
 async def test_nested_models(item: NestedModelsTesting) -> dict[str, str]:
