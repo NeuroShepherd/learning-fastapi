@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Query, Path, Body
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, HttpUrl
 from enum import Enum
 from typing import Annotated, Literal
@@ -194,3 +195,7 @@ async def test_nested_models(item: NestedModelsTesting) -> dict[str, str]:
     with open("nested_models.txt", "a") as f:
         f.write(f"{item.id}: {item.links}\n")
     return {"message": f"Nested model received with id {item.id} and links {item.links}"}
+
+
+
+app.mount("/static", StaticFiles(directory="test_static"), name="static")
