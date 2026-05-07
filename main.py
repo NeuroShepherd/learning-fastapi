@@ -137,6 +137,8 @@ class ItemUpdate(BaseModel):
     cool_colors: list[str] | None = None
 
 
+# using Body(embed=True) to indicate that the item parameter should be treated as a single object 
+# in the request body, rather than being unpacked into individual fields.
 @app.patch("/items/{item_id}/", description="Update an item with a path parameter and a body parameter")
 async def update_item(item_id: int, item: Annotated[ItemUpdate, Body(embed=True)]) -> dict[str, str]:
     with open("items.txt", "r") as f:
