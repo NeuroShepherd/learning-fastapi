@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Query, Path
 from pydantic import BaseModel, Field
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, Literal
 from ast import literal_eval
 
 app = FastAPI()
@@ -112,3 +112,19 @@ async def update_item(item_id: int, item: Item) -> dict[str, str]:
     Only appears if you don't provide a description in the decorator, otherwise the description in the decorator takes precedence.
     """
     return {"item_id": item_id, **item.model_dump()}
+
+
+
+
+# use a Pydantic model to define the query parameters for an endpoint.
+# This allows you to group related query parameters together and also provides validation and documentation for those parameters.
+class FilterParams(BaseModel):
+    limit: int = Field(100, gt=0, le=100)
+    offset: int = Field(0, ge=0)
+    order_by: Literal["created_at", "updated_at"] = "created_at"
+    tags: list[str] = []
+
+
+@app.get("/filter-params/")
+async def read_items(filter_query: Annotated[FilterParams, Query()]):
+    return filter_query
