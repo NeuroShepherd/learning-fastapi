@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query, Path, Body, Cookie, Response
+from fastapi import FastAPI, Query, Path, Body, Cookie, Response, Header
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, HttpUrl
 from enum import Enum
@@ -250,3 +250,20 @@ async def set_cookie(response: Response):
 @app.get("/test-cookie/")
 async def test_cookie(ads_id: Annotated[str | None, Cookie()] = None):
     return {"ads_id": ads_id}
+
+
+
+
+
+
+class CommonHeaders(BaseModel):
+    host: str
+    save_data: bool
+    if_modified_since: str | None = None
+    traceparent: str | None = None
+    x_tag: list[str] = []
+
+
+@app.get("/test-headers/")
+async def test_headers(headers: Annotated[CommonHeaders, Header()]):
+    return headers
