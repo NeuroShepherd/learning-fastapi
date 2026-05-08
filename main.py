@@ -1,8 +1,8 @@
 from fastapi import FastAPI, Query, Path, Body, Cookie, Response, Header
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl, EmailStr
 from enum import Enum
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Any
 from ast import literal_eval
 from datetime import datetime, time, timedelta
 from uuid import UUID
@@ -248,7 +248,7 @@ async def set_cookie(response: Response):
 #   -H 'accept: application/json' \
 #   -H 'Cookie: ads_id=ads_id%3D12345%3B%20Path%3D/%3B%20HttpOnly%20'
 @app.get("/test-cookie/")
-async def test_cookie(ads_id: Annotated[str | None, Cookie()] = None):
+async def test_cookie(ads_id: Annotated[str | None, Cookie()] = None) -> dict[str, str | None]:
     return {"ads_id": ads_id}
 
 
@@ -265,5 +265,33 @@ class CommonHeaders(BaseModel):
 
 
 @app.get("/test-headers/")
-async def test_headers(headers: Annotated[CommonHeaders, Header()]):
+async def test_headers(headers: Annotated[CommonHeaders, Header()]) -> CommonHeaders:
     return headers
+
+
+
+
+
+# Code is testing a couple of things here:
+# 1. The UserIn model has a password field which works for data ingress
+# 2. The UserOut model is the same as UserIn, but with the password stripped out which can be used for data egress
+# 3. The user-response-model endpoint makes use of the response_model parameter to specify that the response should be in the format 
+# of the UserOut model, which means that the password field will not be included in the response even though it is part of the UserIn 
+# model used for the request body. The response_model parameter allows us to fleixibly control the shape of the response data, which 
+# is useful for security and data privacy reasons, as well as for providing a clear and consistent API contract to clients.
+class UserIn(BaseModel):
+    username: str
+    password: str
+    email: EmailStr
+    full_name: str | None = None
+
+
+class UserOut(BaseModel):
+    username: str
+    email: EmailStr
+    full_name: str | None = None
+
+# Any imported from typing module
+@app.post("/user-response-model/", response_model=UserOut)
+async def create_user(user: UserIn) -> Any:
+    return user
