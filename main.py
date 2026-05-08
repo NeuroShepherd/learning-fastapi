@@ -16,7 +16,7 @@ class Item(BaseModel):
     # this field is required because it has no default value, and it must be a string between 1 and 100 characters long.
     # None is allowed as a value, but requires user to explicitly set it to None if they don't want to provide a value. 
     # This is different from the name field, which is optional and defaults to None if not provided.
-    favorite_animal: Annotated[str | None, Field(min_length=1, max_length=100)]
+    favorite_animal: Annotated[str | None, Field(min_length=1, max_length=100, examples=["cat"])]
     # this was an attempt to have a query parameter that is a list of strings e.g.
     # https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#query-parameter-list-multiple-values
     # but it does not work because these models are part of the body of the request, not query parameters
