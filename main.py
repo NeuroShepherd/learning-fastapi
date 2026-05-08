@@ -4,6 +4,9 @@ from pydantic import BaseModel, Field, HttpUrl
 from enum import Enum
 from typing import Annotated, Literal
 from ast import literal_eval
+from datetime import datetime, time, timedelta
+from uuid import UUID
+
 
 app = FastAPI()
 
@@ -199,3 +202,28 @@ async def test_nested_models(item: NestedModelsTesting) -> dict[str, str]:
 
 
 app.mount("/static", StaticFiles(directory="test_static"), name="static")
+
+
+
+
+# can only use a valid UUID like 550e8400-e29b-41d4-a716-446655440000
+# UUID: "128-bit label used for unique identification, typically represented as 32 hexadecimal characters separated by hyphens in an 8-4-4-4-12 format."
+@app.put("/test-extra-data-types/{item_id}")
+async def test_extra_data_types(
+    item_id: UUID,
+    start_datetime: Annotated[datetime, Body()],
+    end_datetime: Annotated[datetime, Body()],
+    process_after: Annotated[timedelta, Body()],
+    repeat_at: Annotated[time | None, Body()] = None,
+):
+    start_process = start_datetime + process_after
+    duration = end_datetime - start_process
+    return {
+        "item_id": item_id,
+        "start_datetime": start_datetime,
+        "end_datetime": end_datetime,
+        "process_after": process_after,
+        "repeat_at": repeat_at,
+        "start_process": start_process,
+        "duration": duration,
+    }
