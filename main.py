@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query, Path, Body
+from fastapi import FastAPI, Query, Path, Body, Cookie, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, HttpUrl
 from enum import Enum
@@ -227,3 +227,26 @@ async def test_extra_data_types(
         "start_process": start_process,
         "duration": duration,
     }
+    
+
+
+# I first need to set a cookie in the browser or using curl, then I can test the cookie by making a request
+# to the test-cookie endpoint with the cookie included in the request headers.
+@app.get("/set-cookie/")
+async def set_cookie(response: Response):
+    response.set_cookie(
+        key="ads_id",
+        value="12345",
+    )
+    return {"message": "cookie set"}
+
+
+# example of a valid cookie value: ads_id=12345; Path=/; HttpOnly
+# or the complete request might look like this generally: curl -v -H "Cookie: ads_id=abc123" http://localhost:8000/test-cookie/
+# curl -X 'GET' \
+#   'http://127.0.0.1:8000/test-cookie/' \
+#   -H 'accept: application/json' \
+#   -H 'Cookie: ads_id=ads_id%3D12345%3B%20Path%3D/%3B%20HttpOnly%20'
+@app.get("/test-cookie/")
+async def test_cookie(ads_id: Annotated[str | None, Cookie()] = None):
+    return {"ads_id": ads_id}
