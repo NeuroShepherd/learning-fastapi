@@ -295,3 +295,67 @@ class UserOut(BaseModel):
 @app.post("/user-response-model/", response_model=UserOut)
 async def create_user(user: UserIn) -> Any:
     return user
+
+
+
+
+# Create an example of setting up proper return types and data filtering via Pydantic classes
+
+class BaseUser(BaseModel):
+    username: str
+    email: EmailStr
+    full_name: str | None = None
+    
+    def modify_username(self, new_username: str):
+        self.username = new_username
+
+
+class UserIn(BaseUser):
+    password: str
+
+# No need for the response_model parameter here
+# In this case, we feed in a UserIn model which is built on top of the BaseUser model, so it has all the same fields as BaseUser plus the password field.
+# When we return the user object, FastAPI will automatically use the BaseUser model to filter out the password field from the response, because the return 
+# type of the function is specified as BaseUser. This allows us to keep the password field in the request body for data ingress, but exclude it from the 
+# response body for data egress, which is a common pattern for handling sensitive information in APIs.
+@app.post("/user-class-filtering/")
+async def create_user(user: UserIn) -> BaseUser:
+    with open("users.txt", "a") as f:
+        f.write(f"{user.username}: {user.email}: {user.full_name}\n")
+    return user
+
+
+
+@app.patch("/user-class-filtering/{username}/")
+async def update_username(username: str, new_username: str) -> BaseUser:
+    with open("users.txt", "r") as f:
+        lines = f.readlines()
+
+    updated_lines = []
+    found = False
+    updated_user = None
+
+    for line in lines:
+        parts = line.strip().split(": ", maxsplit=2)
+        if len(parts) != 3:
+            updated_lines.append(line)
+            continue
+
+        stored_username, email, full_name = parts
+
+        if stored_username == username:
+            found = True
+            user = BaseUser(username=stored_username, email=email, full_name=full_name)
+            user.modify_username(new_username)
+            updated_user = user
+            updated_lines.append(f"{user.username}: {user.email}: {user.full_name}\n")
+        else:
+            updated_lines.append(line)
+
+    if not found:
+        return {"message": f"User with username {username} not found"}
+
+    with open("users.txt", "w") as f:
+        f.writelines(updated_lines)
+
+    return updated_user
