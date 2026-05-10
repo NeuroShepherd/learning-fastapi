@@ -2,7 +2,7 @@ from fastapi import FastAPI, Query, Path, Body, Cookie, Response, Header
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, HttpUrl, EmailStr
 from enum import Enum
-from typing import Annotated, Literal, Any
+from typing import Annotated, Literal, Any, Union
 from ast import literal_eval
 from datetime import datetime, time, timedelta
 from uuid import UUID
@@ -31,18 +31,22 @@ class FavoriteSport(str, Enum):
     basketball = "basketball"
     baseball = "baseball"
     track = "track"
+    
+class Tags(Enum):
+    items = "items"
+    users = "users"
 
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
 
 
-@app.get("/custom/{item_id}", description="This is a custom function description")
+@app.get("/custom/{item_id}", description="This is a custom function description", tags=[Tags.items])
 async def custom_func_name(item_id: str):
     return {"message": f"This is a custom function name for item {item_id}"}
 
 
-@app.post("/items", description="Create an item")
+@app.post("/items", description="Create an item", tags=[Tags.items])
 async def create_item(item: Item) -> dict[str, str]:
     # write to a file in this project folder and create file if it doesn't exist
     with open("items.txt", "a") as f:
@@ -50,7 +54,7 @@ async def create_item(item: Item) -> dict[str, str]:
     return {"message": f"Item created with id {item.id} and name {item.name} with favorite animal {item.favorite_animal} and cool colors {item.cool_colors}"}
 
 
-@app.get("/items", description="Get all items")
+@app.get("/items", description="Get all items", tags=[Tags.items])
 async def get_items(limit: int = 10, reverse: bool | None = None) -> list[Item]:
     items = []
     with open("items.txt", "r") as f:
@@ -79,7 +83,7 @@ async def get_items(limit: int = 10, reverse: bool | None = None) -> list[Item]:
     return items
 
 
-@app.get("/items/{item_id}", description="Get an item by id")
+@app.get("/items/{item_id}", description="Get an item by id", tags=[Tags.items])
 async def get_item_by_id(item_id: Annotated[int, Path(ge=0)]) -> list[Item] | dict[str, str]:
     matches = []
     with open("items.txt", "r") as f:
@@ -107,7 +111,8 @@ async def set_favorite_sport(sport: FavoriteSport) -> dict[str, str]:
 # example makes use of path and body parameters in the same endpoint. could also use query parameters if desired
 @app.put("/items/{item_id}", 
          description="This overrides the doc string from the function", 
-         summary="Text goes next to the endpoint name"
+         summary="Text goes next to the endpoint name",
+         tags=[Tags.items]
          )
 async def update_item(item_id: int, item: Item) -> dict[str, str]:
     """
@@ -359,3 +364,41 @@ async def update_username(username: str, new_username: str) -> BaseUser:
         f.writelines(updated_lines)
 
     return updated_user
+
+
+
+
+
+
+
+# Using a union of possible responses
+
+class BaseItem(BaseModel):
+    description: str
+    type: str
+
+
+class CarItem(BaseItem):
+    type: str = "car"
+
+
+class PlaneItem(BaseItem):
+    type: str = "plane"
+    size: int
+
+
+items = {
+    "item1": {"description": "All my friends drive a low rider", "type": "car"},
+    "item2": {
+        "description": "Music is my aeroplane, it's my aeroplane",
+        "type": "plane",
+        "size": 5,
+    },
+}
+
+
+@app.get("/union-testing/{item_id}", response_model=Union[CarItem, PlaneItem], tags=["tag testing"])
+async def read_item(item_id: str):
+    if item_id not in items:
+        return {"description": "Item not found", "type": "unknown"}
+    return items[item_id]
