@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query, Path, Body, Cookie, Response, Header, Depends
+from fastapi import FastAPI, Query, Path, Body, Cookie, Response, Header, Depends, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, HttpUrl, EmailStr
 from enum import Enum
@@ -426,6 +426,19 @@ class CommonQueryParamsPydantic(BaseModel):
     q: Annotated[str | None, Query(description="Query string for searching items in the database that have a good match") ] = None
     skip: Annotated[int, Query(ge=0, description="Number of items to skip in the database query")] = 0
     limit: Annotated[int, Query(gt=0, le=100, description="Maximum number of items to return from the database query")] = 100
+    
+    
+    
+# path operation decorator dependencies
+async def verify_token(x_token: Annotated[str, Header()] = "fake-super-secret-token"):
+    if x_token != "fake-super-secret-token":
+        raise HTTPException(status_code=400, detail="X-Token header invalid")
+
+
+async def verify_key(x_key: Annotated[str, Header()]):
+    if x_key != "fake-super-secret-key":
+        raise HTTPException(status_code=400, detail="X-Key header invalid")
+    return x_key
 
 
 # using this:
@@ -433,7 +446,7 @@ class CommonQueryParamsPydantic(BaseModel):
 # would be less informative in the API docs and would not have validation for the query parameters, whereas using 
 # the Pydantic model allows us to have detailed documentation and validation for each query parameter, which improves 
 # the usability and reliability of the API.
-@app.get("/test-dependency/")
+@app.get("/test-dependency/", dependencies=[Depends(verify_token), Depends(verify_key)])
 async def test_dependency(commons: Annotated[CommonQueryParamsPydantic, Depends(CommonQueryParamsPydantic)]) -> CommonQueryParamsPydantic:    
     response = {}
     if commons.q:
