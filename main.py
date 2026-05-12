@@ -430,6 +430,10 @@ class CommonQueryParamsPydantic(BaseModel):
     
     
 # path operation decorator dependencies
+# use these when you don't need the return value of a dependency inside the path operation function
+# or if the dependency doesn't return a value but you still need the side effects of the dependency 
+# to occur before the path operation function is executed.
+# These can be added as a list of dependencies in the path operation decorator
 async def verify_token(x_token: Annotated[str, Header()] = "fake-super-secret-token"):
     if x_token != "fake-super-secret-token":
         raise HTTPException(status_code=400, detail="X-Token header invalid")
