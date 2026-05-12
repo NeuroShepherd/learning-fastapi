@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query, Path, Body, Cookie, Response, Header
+from fastapi import FastAPI, Query, Path, Body, Cookie, Response, Header, Depends
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, HttpUrl, EmailStr
 from enum import Enum
@@ -46,7 +46,12 @@ async def custom_func_name(item_id: str):
     return {"message": f"This is a custom function name for item {item_id}"}
 
 
-@app.post("/items", description="Create an item", tags=[Tags.items])
+@app.post(
+    "/items/",
+    summary="Create an item",
+    description="Create an item with all the information, name, description, price, tax and a set of unique tags",
+    tags=[Tags.items]
+)
 async def create_item(item: Item) -> dict[str, str]:
     # write to a file in this project folder and create file if it doesn't exist
     with open("items.txt", "a") as f:
@@ -402,3 +407,37 @@ async def read_item(item_id: str):
     if item_id not in items:
         return {"description": "Item not found", "type": "unknown"}
     return items[item_id]
+
+
+
+# test out the dependency injection with a Class-based dependency
+
+fake_items_db = [{"item_name": "Foo"}, {"item_name": "Bar"}, {"item_name": "Baz"}]
+
+# a basic class example
+class CommonQueryParams:
+    def __init__(self, q: str | None = None, skip: int = 0, limit: int = 100):
+        self.q = q
+        self.skip = skip
+        self.limit = limit
+        
+# a Pydantic model example for the same thing, but with added validation and documentation for the query params        
+class CommonQueryParamsPydantic(BaseModel):
+    q: Annotated[str | None, Query(description="Query string for searching items in the database that have a good match") ] = None
+    skip: Annotated[int, Query(ge=0, description="Number of items to skip in the database query")] = 0
+    limit: Annotated[int, Query(gt=0, le=100, description="Maximum number of items to return from the database query")] = 100
+
+
+# using this:
+    # async def test_dependency(commons: Annotated[CommonQueryParams, Depends(CommonQueryParams)]) -> dict[str, Any]:
+# would be less informative in the API docs and would not have validation for the query parameters, whereas using 
+# the Pydantic model allows us to have detailed documentation and validation for each query parameter, which improves 
+# the usability and reliability of the API.
+@app.get("/test-dependency/")
+async def test_dependency(commons: Annotated[CommonQueryParamsPydantic, Depends(CommonQueryParamsPydantic)]) -> CommonQueryParamsPydantic:    
+    response = {}
+    if commons.q:
+        response.update({"q": commons.q})
+    items = fake_items_db[commons.skip : commons.skip + commons.limit]
+    response.update({"items": items})
+    return response
